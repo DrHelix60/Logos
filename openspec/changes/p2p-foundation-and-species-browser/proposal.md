@@ -6,7 +6,7 @@ Human knowledge across sciences and humanities is deeply fragmented, arbitrarily
 
 **Logos** solves this as a decentralized, peer-to-peer social network and database system for **knowledge standardization**. Logos allows communities to form **Schools of Thought**, curate **Canons** of validated modular databases, and enforce structural **Blueprints** so that any entry proposed by contributors adheres to rigorous formatting, automated scoring, and peer review.
 
-This first milestone builds the Logos core client runtime and user experience, using the author's **Biology School of Thought (`@ScienceXI`)** as the flagship demonstration.
+This first milestone builds the Logos core client runtime and user experience, using the author's **Biology School of Thought** as the flagship demonstration.
 
 ## What Changes
 

@@ -7,7 +7,7 @@ Provides user-facing exploration of Schools of Thought, modular databases, and b
 ## ADDED Requirements
 
 ### Requirement: Navigation and Visual Brand
-The system SHALL present the `@ScienceXI` visual identity, responsive navigation header, footer, Home overview, and User Guide explaining project concepts and terms.
+The system SHALL present the sage-green visual identity from the design, responsive navigation header, footer, Home overview, and User Guide explaining project concepts and terms.
 
 #### Scenario: User navigates between Home and User Guide
 - **WHEN** the user visits the root page or clicks "Home" or "User Guide"

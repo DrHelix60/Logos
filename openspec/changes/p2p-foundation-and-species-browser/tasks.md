@@ -3,7 +3,7 @@
 ## 1. Setup & Design Foundation
 
 - [ ] 1.1 Initialize Next.js application with TypeScript, Tailwind CSS, and static export configuration (`output: 'export'`) and verify build succeeds.
-- [ ] 1.2 Define `@ScienceXI` design tokens, color variables (`#749B64`, `#4A6541`, `#F7F1E5`), and typography in Tailwind configuration.
+- [ ] 1.2 Define design tokens, color variables (`#749B64`, `#4A6541`, `#F7F1E5`), and typography in Tailwind configuration.
 
 ## 2. In-Browser P2P SQLite Database Layer
 
@@ -13,7 +13,7 @@
 
 ## 3. UI Shell, Navigation & User Guide
 
-- [ ] 3.1 Implement `@ScienceXI` Header (with emblem, navigation links, and "Back to Biology" action) and multi-column Footer matching the Figma design.
+- [ ] 3.1 Implement Navigation Header (with emblem, navigation links, and "Back to Biology" action) and multi-column Footer matching the Figma design.
 - [ ] 3.2 Implement Home Page and User Guide view presenting project purpose, terminology, and concept definitions as laid out in Figma.
 
 ## 4. Knowledge Browser & Filter Engine
