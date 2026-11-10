@@ -2,27 +2,27 @@
 
 ## Why
 
-Scientific biological databases are currently centralized, expensive to maintain, and often gatekeep contributions through academic pedigree rather than empirical merit. Furthermore, rigid top-down taxonomic classifications create irreconcilable conflicts when different research groups disagree on species boundaries.
+Human knowledge across sciences and humanities is deeply fragmented, arbitrarily classified, and siloed by institutional gatekeeping. There is currently no decentralized platform where independent thinkers and research groups can formally standardize knowledge through empirical structures.
 
-To solve this, we are building **Logos**: a local-first, zero-server-cost scientific database platform. This first change establishes the user-facing foundation: a complete client-side species browser adhering to the `@ScienceXI` visual system from Figma, powered by an embedded local database (SQLite WASM) that requires $0 in server hosting, with support for rich multimedia (audio vocalizations, tracks, distribution maps, and video embeds) and asset bundle downloads.
+**Logos** solves this as a decentralized, peer-to-peer social network and database system for **knowledge standardization**. Logos allows communities to form **Schools of Thought**, curate **Canons** of validated modular databases, and enforce structural **Blueprints** so that any entry proposed by contributors adheres to rigorous formatting, automated scoring, and peer review.
+
+This first milestone builds the Logos core client runtime and user experience, using the author's **Biology School of Thought (`@ScienceXI`)** as the flagship demonstration.
 
 ## What Changes
 
-- **P2P Local-First Database Core**: Embeds a zero-server SQLite WASM engine running directly in the browser via OPFS / IndexedDB, seeded with biological species data (*Grey Wolf*, *Common Shrew*, *Pygmy Shrew*, *Mountain Shrew*).
-- **Navigation & Brand Experience**: Implements the `@ScienceXI` visual identity (custom sage-green design system, responsive navigation, Home & User Guide pages, and breadcrumbs connecting Biology to Science).
-- **Advanced Taxonomy & Characteristic Filtering**: Provides multi-category filtering (Class, Size, Diet, Activity, Habitat, Biome) with user-selectable logic per category: "Pertenece a uno" (OR) vs. "Incluido en todos" (AND).
-- **Species Entry Display Engine**: Renders dynamic species entries structured according to the Animal Species Blueprint:
-  - *Tier 1*: Header (Common & Scientific names, nominate status), Size, Diet, Activity.
-  - *Tier 2*: Ethology, Vocalization audio player, Video embeds, Skeletal & Human scale comparison illustrations.
-  - *Tier 3*: Ecology (trophic level, Eltonian niche), Habitat & Biome cards, Current Recognised Distribution, Expected Distribution, and Last Glacial Maximum (LGM) maps.
-  - *Tier 4*: Anatomy & Physiology, Tracks and Identification comparison.
-  - *Metric*: Dynamic 0-100% Core Completion Metric score badge.
-- **Media Asset Exporting**: Enables instant downloading of individual entry files (audio, illustrations, maps) or one-click ZIP packaging of all assets for an entry.
+- **Logos Knowledge & Blueprint Engine**: Implements the foundation for blueprint-driven data presentation, where entries are dynamically rendered according to their domain schema.
+- **School of Thought & Canon Hierarchy**: Displays community groupings, navigation between broader scientific umbrellas and specific databases, and canonical database selection.
+- **P2P Zero-Server Database Core**: Embeds SQLite WASM in the browser with OPFS/IndexedDB persistence and portable snapshot export/import ($0 server cost).
+- **Flagship Implementation (Biology School of Thought)**: 
+  - Seeds the platform with the author's Animal Species Blueprint (Tiers 1-4, Core Completion Metric).
+  - Showcases the author's scientific contributions and terminology across 4 pilot species entries (*Canis lupus*, *Sorex araneus*, *Sorex minutus*, *Sorex alpinus*).
+  - Advanced multi-category filtering with "Pertenece a uno" (OR) vs. "Incluido en todos" (AND) logic.
+- **Media & Asset Exporting**: Enables instant downloading of individual assets or full-entry ZIP bundles.
 
 ## Capabilities
 
 ### New Capabilities
-- `species-browser`: Viewing and navigating species entries, taxonomic hierarchies, and multi-criteria filters with AND/OR logic per category.
+- `knowledge-browser`: Browsing Schools of Thought, modular databases, and blueprint-structured entries with multi-criteria category filters.
 - `p2p-database`: Running embedded local-first SQLite in the browser with seed data and snapshot import/export for zero server costs.
 - `media-asset-download`: Downloading individual media files or generating full-entry ZIP bundles on the client side.
 
