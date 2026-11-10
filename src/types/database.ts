@@ -1,8 +1,9 @@
-export type UserRole = "leader" | "member" | "visitor";
+export type UserRole = "founder" | "leader" | "member" | "visitor";
 
 export interface UserProfile {
   id: string;
-  name: string;
+  fullName: string;
+  displayName: string;
   role: UserRole;
   reputationScore: number;
   acceptedProposals: number;
@@ -10,37 +11,41 @@ export interface UserProfile {
   spotlightTokens: number;
 }
 
-export interface SchoolOfThought {
+export interface Community {
   id: string;
   name: string;
-  description: string;
-  curatorRole: string;
-}
-
-export interface Canon {
-  id: string;
-  schoolId: string;
-  name: string;
-  version: string;
-  isActive: boolean;
-  databaseIds: string[];
+  discipline: string;
+  scopePrinciples: string;
+  creatorId: string;
+  createdAt: string;
 }
 
 export interface DatabaseModel {
   id: string;
+  communityId: string;
   name: string;
   scopeDescription: string;
-  defaultBlueprintId: string;
+  blueprintId: string;
+  createdAt: string;
 }
+
+export type BlueprintFieldType = 
+  | "text" 
+  | "number" 
+  | "textarea" 
+  | "multiselect" 
+  | "image" 
+  | "audio" 
+  | "video" 
+  | "map";
 
 export interface BlueprintField {
   id: string;
   label: string;
-  type: "text" | "number" | "select" | "multiselect" | "textarea" | "audio" | "image" | "video" | "map";
+  type: BlueprintFieldType;
   options?: string[];
   unit?: string;
   required: boolean;
-  tier: 1 | 2 | 3 | 4;
   weightPercent: number;
 }
 
@@ -54,107 +59,26 @@ export interface BlueprintSection {
 
 export interface Blueprint {
   id: string;
+  communityId: string;
   name: string;
   version: string;
   domain: string;
   sections: BlueprintSection[];
+  createdAt: string;
 }
 
-export interface MediaAsset {
-  id: string;
-  title: string;
-  type: "audio" | "image" | "map" | "video";
-  url: string;
-  filename: string;
-  caption?: string;
-}
-
-export interface SpeciesEntryData {
-  commonName: string;
-  scientificName: string;
-  nominateReference?: string;
-  class: string;
-  sizeWeight: string;
-  sizeLength: string;
-  sizeHeight?: string;
-  sizeCategory: string;
-  diet: string;
-  activity: string;
-  ethology: {
-    territorialism?: string;
-    socialization?: string;
-    sexualSelection?: string;
-    parenting?: string;
-    seasonal?: string;
-    feedingDrinking?: string;
-    thermoregulation?: string;
-    summaryText: string;
-  };
-  ecology: {
-    trophicLevel: number;
-    eltonianNiche: string;
-    immediateFoodWeb: string;
-    isKeystone: boolean;
-    abioticInteractions: string;
-    summaryText: string;
-  };
-  anatomy: {
-    sexualDimorphism?: string;
-    metabolism?: string;
-    notableStructures: string;
-    summaryText: string;
-  };
-  habitats: string[];
-  biomes: string[];
-  tracksAndId?: {
-    description: string;
-    imageUrl?: string;
-  };
-  media: {
-    heroImage: string;
-    vocalizationAudio?: {
-      url: string;
-      title: string;
-      filename: string;
-    };
-    videoEmbedUrl?: string;
-    videoTitle?: string;
-    gallery: MediaAsset[];
-  };
-  distribution: {
-    recognisedMapUrl?: string;
-    expectedMapUrl?: string;
-    lgmMapUrl?: string;
-  };
-}
-
-export interface SpeciesEntry {
+export interface DynamicEntry {
   id: string;
   databaseId: string;
+  communityId: string;
   blueprintId: string;
-  commonName: string;
-  scientificName: string;
+  title: string;
+  subtitle?: string;
   status: "published" | "pending_review";
   authorId: string;
   isBoosted: boolean;
   metricScore: number;
-  data: SpeciesEntryData;
+  data: Record<string, any>;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface FilterState {
-  searchQuery: string;
-  selectedClasses: string[];
-  classMode: "or" | "and";
-  selectedSizes: string[];
-  sizeMode: "or" | "and";
-  selectedDiets: string[];
-  dietMode: "or" | "and";
-  selectedActivities: string[];
-  activityMode: "or" | "and";
-  selectedHabitats: string[];
-  habitatMode: "or" | "and";
-  selectedBiomes: string[];
-  biomeMode: "or" | "and";
 }

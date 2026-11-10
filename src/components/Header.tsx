@@ -1,46 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
-import { UserProfile, UserRole } from "@/types/database";
-import { ShieldCheck, User, Eye, Database, FileSpreadsheet, Download, RefreshCw, Upload } from "lucide-react";
+import { Community, DatabaseModel, DynamicEntry, UserProfile, UserRole } from "@/types/database";
+import { ShieldCheck, User, Eye, Database, Download, RefreshCw, Upload, ChevronRight, Home, Layers } from "lucide-react";
 
 interface HeaderProps {
-  currentTab: "guide" | "database" | "entry";
-  onTabChange: (tab: "guide" | "database") => void;
+  currentView: "platform" | "community" | "database" | "entry" | "blueprint_studio";
+  selectedCommunity: Community | null;
+  selectedDatabase: DatabaseModel | null;
+  selectedEntry: DynamicEntry | null;
+  onNavigateHome: () => void;
+  onNavigateCommunity: () => void;
+  onNavigateDatabase: () => void;
   currentProfile: UserProfile;
-  profiles: UserProfile[];
-  onProfileChange: (profile: UserProfile) => void;
   onExportDb: () => void;
   onImportDb: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onResetDb: () => void;
-  pendingProposalsCount?: number;
-  onOpenCreateEntry?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentTab,
-  onTabChange,
+  currentView,
+  selectedCommunity,
+  selectedDatabase,
+  selectedEntry,
+  onNavigateHome,
+  onNavigateCommunity,
+  onNavigateDatabase,
   currentProfile,
-  profiles,
-  onProfileChange,
   onExportDb,
   onImportDb,
   onResetDb,
-  pendingProposalsCount = 0,
-  onOpenCreateEntry,
 }) => {
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case "leader":
-        return <ShieldCheck className="w-4 h-4 text-emerald-800" />;
-      case "member":
-        return <User className="w-4 h-4 text-blue-800" />;
-      case "visitor":
-        return <Eye className="w-4 h-4 text-stone-700" />;
-    }
-  };
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
 
   return (
     <header className="w-full bg-[#749B64] border-b-4 border-[#5E8450] shadow-figma text-white sticky top-0 z-40">
@@ -51,7 +42,11 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             LOGOS P2P RUNTIME (SQLite WASM)
           </span>
-          <span className="hidden md:inline text-[#C0D4BC]">| School: Empirical Organismal Taxonomy</span>
+          {selectedCommunity && (
+            <span className="hidden md:inline text-[#C0D4BC]">
+              | Discipline: {selectedCommunity.discipline}
+            </span>
+          )}
         </div>
 
         {/* Database & Profile quick controls */}
@@ -61,57 +56,52 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Import DB</span>
             <input type="file" accept=".sqlite,.db" className="hidden" onChange={onImportDb} />
           </label>
-          <button onClick={onExportDb} className="hover:text-white flex items-center gap-1">
+          <button onClick={onExportDb} className="hover:text-white flex items-center gap-1" title="Export SQLite binary snapshot">
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Export DB</span>
           </button>
-          <button onClick={onResetDb} title="Reset to initial seed data" className="hover:text-white flex items-center gap-1">
+          <button onClick={onResetDb} title="Reset to clean database" className="hover:text-white flex items-center gap-1">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
 
-          {/* Role switcher toggle */}
+          {/* User Profile Badge */}
           <div className="relative">
             <button
-              onClick={() => setShowRoleMenu(!showRoleMenu)}
+              onClick={() => setShowProfileDetails(!showProfileDetails)}
               className="bg-[#344B2D] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 text-xs font-medium text-white hover:bg-[#283C22] transition"
             >
-              {getRoleIcon(currentProfile.role)}
-              <span className="capitalize">{currentProfile.role}: {currentProfile.name.split(" ")[0]}</span>
-              {currentProfile.spotlightTokens > 0 && (
-                <span className="bg-amber-400 text-stone-900 font-bold px-1.5 rounded-full text-[10px]" title="Spotlight Tokens available">
-                  ★{currentProfile.spotlightTokens}
-                </span>
-              )}
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span className="font-bold">{currentProfile.displayName}</span>
+              <span className="text-[10px] bg-amber-400 text-stone-900 font-bold px-1.5 rounded-full uppercase tracking-wider">
+                {currentProfile.role}
+              </span>
             </button>
 
-            {showRoleMenu && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-[#F7F1E5] text-stone-900 rounded-xl shadow-2xl border border-[#D5CBB9] py-2 z-50">
-                <div className="px-3 py-1.5 border-b border-stone-200 text-xs font-bold text-stone-600">
-                  Switch Active Role (Test Mode)
+            {showProfileDetails && (
+              <div className="absolute right-0 mt-2 w-72 bg-[#F7F1E5] text-stone-900 rounded-2xl shadow-2xl border border-[#D5CBB9] p-4 z-50 text-xs space-y-2">
+                <div className="border-b border-stone-200 pb-2">
+                  <div className="font-bold text-sm text-[#344B2D]">{currentProfile.displayName}</div>
+                  <div className="text-[11px] text-stone-600 font-medium">{currentProfile.fullName}</div>
                 </div>
-                {profiles.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      onProfileChange(p);
-                      setShowRoleMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#EAE3D2] transition ${
-                      currentProfile.id === p.id ? "bg-[#DFD7C3] font-bold" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {getRoleIcon(p.role)}
-                      <div>
-                        <div>{p.name}</div>
-                        <div className="text-[10px] text-stone-500 capitalize">{p.role} • Rep: {p.reputationScore}%</div>
-                      </div>
-                    </div>
-                    {p.spotlightTokens > 0 && (
-                      <span className="text-amber-700 font-semibold text-[10px]">★ {p.spotlightTokens} token</span>
-                    )}
-                  </button>
-                ))}
+
+                <div className="space-y-1 text-stone-700">
+                  <div className="flex justify-between">
+                    <span>Account Role:</span>
+                    <strong className="capitalize text-emerald-800">{currentProfile.role}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Reputation:</span>
+                    <strong>{currentProfile.reputationScore}%</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Spotlight Tokens:</span>
+                    <strong className="text-amber-700">★ {currentProfile.spotlightTokens}</strong>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-stone-200 text-[10px] text-stone-500 italic">
+                  Pre-issued founder identity for local beta testing.
+                </div>
               </div>
             )}
           </div>
@@ -119,74 +109,92 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main navigation header */}
-      <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Emblem & Branding */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onTabChange("guide")}>
-          <div className="w-14 h-14 rounded-full bg-[#F7F1E5] border-2 border-[#4A6541] flex items-center justify-center shadow-md text-[#4A6541] font-bold text-center leading-tight">
-            <span className="text-[11px] tracking-widest font-serif">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={onNavigateHome}>
+          <div className="w-12 h-12 rounded-full bg-[#F7F1E5] border-2 border-[#4A6541] flex items-center justify-center shadow-md text-[#4A6541] font-bold text-center leading-tight">
+            <span className="text-[10px] tracking-widest font-serif">
               LOGOS<br />
-              <span className="text-[8px] font-sans font-normal text-stone-600">CANON</span>
+              <span className="text-[7px] font-sans font-normal text-stone-600">NET</span>
             </span>
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#F7F1E5] font-serif">Logos</h1>
-            <p className="text-xs text-[#E0EBDC] font-medium">Standardized Organismal Database</p>
+            <p className="text-[11px] text-[#E0EBDC] font-medium">Standardized Knowledge Social Network</p>
           </div>
         </div>
 
-        {/* Navigation links */}
-        <nav className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+        {/* Dynamic Breadcrumbs Navigation */}
+        <nav className="flex items-center flex-wrap gap-1 sm:gap-2 text-xs text-[#E5EFE2]">
           <button
-            onClick={() => onTabChange("guide")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-              currentTab === "guide"
-                ? "bg-[#4A6541] text-white shadow-inner font-semibold"
-                : "text-[#EBF3E8] hover:bg-[#5E8450] hover:text-white"
+            onClick={onNavigateHome}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
+              currentView === "platform"
+                ? "bg-[#4A6541] font-bold text-white shadow-inner"
+                : "hover:bg-[#5E8450] text-[#DCE8D8]"
             }`}
           >
-            Home / Guide
-          </button>
-          <button
-            onClick={() => onTabChange("database")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
-              currentTab === "database"
-                ? "bg-[#4A6541] text-white shadow-inner font-semibold"
-                : "text-[#EBF3E8] hover:bg-[#5E8450] hover:text-white"
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            Species Database
+            <Home className="w-3.5 h-3.5" />
+            <span>Logos Network</span>
           </button>
 
-          {/* Quick links to definitions as seen on Figma */}
-          <span className="hidden lg:inline text-[#9BBA8E]">|</span>
-          <button onClick={() => onTabChange("database")} className="hidden lg:inline px-2.5 py-1 text-xs text-[#DCE8D8] hover:text-white">
-            Taxonomy
-          </button>
-          <button onClick={() => onTabChange("database")} className="hidden lg:inline px-2.5 py-1 text-xs text-[#DCE8D8] hover:text-white">
-            Biome
-          </button>
-          <button onClick={() => onTabChange("database")} className="hidden lg:inline px-2.5 py-1 text-xs text-[#DCE8D8] hover:text-white">
-            Ecology
-          </button>
-          <button onClick={() => onTabChange("database")} className="hidden lg:inline px-2.5 py-1 text-xs text-[#DCE8D8] hover:text-white">
-            Ethology
-          </button>
-        </nav>
-
-        {/* Action pills */}
-        <div className="flex items-center space-x-2">
-          {currentProfile.role !== "visitor" && onOpenCreateEntry && (
-            <button
-              onClick={onOpenCreateEntry}
-              className="bg-[#2D4525] text-[#F7F1E5] hover:bg-[#20321A] px-4 py-2 rounded-full text-xs font-bold tracking-wide shadow-md transition flex items-center gap-1.5"
-            >
-              <span>+ Propose Entry</span>
-            </button>
+          {selectedCommunity && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              <button
+                onClick={onNavigateCommunity}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  currentView === "community"
+                    ? "bg-[#4A6541] font-bold text-white shadow-inner"
+                    : "hover:bg-[#5E8450] text-[#DCE8D8]"
+                }`}
+              >
+                {selectedCommunity.name}
+              </button>
+            </>
           )}
 
-          <div className="bg-[#F4EDE0] text-[#344B2D] px-5 py-2 rounded-full text-xs font-bold tracking-wide shadow-md border border-[#D5CBB9] select-none">
-            Biology Canon
+          {currentView === "blueprint_studio" && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              <span className="bg-[#4A6541] font-bold text-white px-2.5 py-1 rounded-lg shadow-inner flex items-center gap-1">
+                <Layers className="w-3.5 h-3.5 text-amber-300" />
+                Blueprint Studio
+              </span>
+            </>
+          )}
+
+          {selectedDatabase && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              <button
+                onClick={onNavigateDatabase}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
+                  currentView === "database"
+                    ? "bg-[#4A6541] font-bold text-white shadow-inner"
+                    : "hover:bg-[#5E8450] text-[#DCE8D8]"
+                }`}
+              >
+                <Database className="w-3.5 h-3.5" />
+                <span>{selectedDatabase.name}</span>
+              </button>
+            </>
+          )}
+
+          {selectedEntry && currentView === "entry" && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              <span className="bg-[#4A6541] font-bold text-white px-2.5 py-1 rounded-lg shadow-inner">
+                {selectedEntry.title}
+              </span>
+            </>
+          )}
+        </nav>
+
+        {/* Right status badge */}
+        <div className="hidden sm:flex items-center space-x-2">
+          <div className="bg-[#F4EDE0] text-[#344B2D] px-4 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-md border border-[#D5CBB9] select-none">
+            {selectedCommunity ? selectedCommunity.discipline : "Knowledge Standardization"}
           </div>
         </div>
       </div>
