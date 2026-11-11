@@ -5,29 +5,30 @@ import { Blueprint, BlueprintField, BlueprintFieldType, BlueprintSection } from 
 import { Plus, Trash2, Layers, Award, Check, X, ArrowLeft } from "lucide-react";
 
 interface BlueprintStudioProps {
-  communityId: string;
-  domain: string;
+  communityId?: string;
+  defaultDomain?: string;
   onSave: (blueprint: Blueprint) => void;
   onCancel: () => void;
 }
 
 export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
   communityId,
-  domain,
+  defaultDomain = "",
   onSave,
   onCancel,
 }) => {
   const [name, setName] = useState("");
   const [version, setVersion] = useState("1.0.0");
+  const [domain, setDomain] = useState(defaultDomain);
   const [sections, setSections] = useState<BlueprintSection[]>([
     {
       id: "sec-1",
-      title: "Tier 1: Basic Components",
+      title: "Tier 1: Core Identifiers",
       tier: 1,
       tierWeightPercent: 25,
       fields: [
-        { id: "f-1", label: "Common Name", type: "text", required: true, weightPercent: 5 },
-        { id: "f-2", label: "Scientific Name", type: "text", required: true, weightPercent: 5 },
+        { id: "f-1", label: "Primary Title / Designation", type: "text", required: true, weightPercent: 10 },
+        { id: "f-2", label: "Canonical Classification", type: "text", required: true, weightPercent: 10 },
       ],
     },
   ]);
@@ -39,11 +40,11 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
     const newTier = ((sections.length % 4) + 1) as 1 | 2 | 3 | 4;
     const newSec: BlueprintSection = {
       id: `sec-${Date.now()}`,
-      title: `Tier ${newTier}: New Section`,
+      title: `Tier ${newTier}: Structural Component`,
       tier: newTier,
       tierWeightPercent: 25,
       fields: [
-        { id: `f-${Date.now()}`, label: "Field Name", type: "text", required: true, weightPercent: 5 },
+        { id: `f-${Date.now()}`, label: "Attribute Name", type: "text", required: false, weightPercent: 5 },
       ],
     };
     setSections([...sections, newSec]);
@@ -60,7 +61,7 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
   const addField = (secId: string) => {
     const newField: BlueprintField = {
       id: `f-${Date.now()}`,
-      label: "New Field",
+      label: "New Attribute",
       type: "text",
       required: false,
       weightPercent: 5,
@@ -97,11 +98,12 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
 
     const blueprint: Blueprint = {
       id: `bp-${Date.now()}`,
-      communityId,
-      name,
-      version,
-      domain,
+      communityId: communityId || undefined,
+      name: name.trim(),
+      version: version.trim() || "1.0.0",
+      domain: domain.trim() || "Universal Standard",
       sections,
+      creatorId: "usr-founder-rafael",
       createdAt: new Date().toISOString(),
     };
 
@@ -114,7 +116,7 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D5CBB9] pb-4">
         <button
           onClick={onCancel}
-          className="inline-flex items-center gap-2 text-stone-700 hover:text-[#344B2D] font-medium text-sm transition bg-[#EBE3D0] hover:bg-[#DFD6C2] px-4 py-2 rounded-xl"
+          className="inline-flex items-center gap-2 text-stone-700 hover:text-[#344B2D] font-medium text-xs transition bg-[#EBE3D0] hover:bg-[#DFD6C2] px-4 py-2 rounded-xl"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Exit Studio</span>
@@ -141,34 +143,50 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
 
       {/* Blueprint Basic Identifiers */}
       <div className="bg-white p-6 rounded-3xl border border-[#D5CBB9] shadow-sm space-y-4">
-        <h2 className="text-2xl font-bold font-serif text-[#344B2D] flex items-center gap-2">
-          <Layers className="w-6 h-6 text-[#749B64]" />
-          <span>Blueprint Creator Studio</span>
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold font-serif text-[#344B2D] flex items-center gap-2">
+            <Layers className="w-6 h-6 text-[#749B64]" />
+            <span>Blueprint Specification Studio</span>
+          </h2>
+          <span className="text-xs bg-[#EFE8D8] text-stone-700 px-3 py-1 rounded-full font-semibold">
+            {communityId ? "Community Blueprint" : "Independent / Universal Blueprint"}
+          </span>
+        </div>
         <p className="text-xs text-stone-600">
-          Define the required sections, field types, and scoring criteria that entries in this school of thought must follow.
+          Formulate the hierarchical schema, field typologies, and quantitative 0–100% metric rubric for standardization.
         </p>
 
-        <div className="grid sm:grid-cols-3 gap-4 pt-2">
+        <div className="grid sm:grid-cols-4 gap-4 pt-2">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold text-stone-700 mb-1">Blueprint Name *</label>
+            <label className="block text-xs font-bold text-stone-700 mb-1">Blueprint Schema Name *</label>
             <input
               type="text"
-              placeholder="e.g. Animal Species Blueprint"
+              placeholder="e.g. Standard Physical Constants, Chemical Species Spec"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm p-2.5 bg-[#F7F1E5] border border-[#D5CBB9] rounded-xl font-medium focus:ring-2 focus:ring-[#749B64]"
+              className="w-full text-xs p-2.5 bg-[#F7F1E5] border border-[#D5CBB9] rounded-xl font-medium focus:ring-2 focus:ring-[#749B64]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">Version</label>
+            <label className="block text-xs font-bold text-stone-700 mb-1">Discipline / Domain</label>
+            <input
+              type="text"
+              placeholder="e.g. Physics, Epistemology, Biology"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              className="w-full text-xs p-2.5 bg-[#F7F1E5] border border-[#D5CBB9] rounded-xl font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-stone-700 mb-1">Version Spec</label>
             <input
               type="text"
               placeholder="1.0.0"
               value={version}
               onChange={(e) => setVersion(e.target.value)}
-              className="w-full text-sm p-2.5 bg-[#F7F1E5] border border-[#D5CBB9] rounded-xl font-mono"
+              className="w-full text-xs p-2.5 bg-[#F7F1E5] border border-[#D5CBB9] rounded-xl font-mono"
             />
           </div>
         </div>
@@ -239,7 +257,7 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
                 <button
                   onClick={() => removeSection(section.id)}
                   className="text-stone-400 hover:text-red-700 transition p-1"
-                  title="Delete Section"
+                  title="Remove Section"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -248,88 +266,118 @@ export const BlueprintStudio: React.FC<BlueprintStudioProps> = ({
 
             {/* Fields List */}
             <div className="space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block">
-                Fields in this Section ({section.fields.length}):
-              </span>
-
-              <div className="grid gap-2">
-                {section.fields.map((field) => (
-                  <div
-                    key={field.id}
-                    className="bg-[#F7F1E5] border border-[#D5CBB9] rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs"
-                  >
-                    {/* Label */}
-                    <div className="flex-1 min-w-[180px]">
+              {section.fields.map((field) => (
+                <div
+                  key={field.id}
+                  className="bg-white p-4 rounded-2xl border border-[#D5CBB9] flex flex-wrap items-center justify-between gap-4 text-xs"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                    <div className="flex-1 space-y-1">
                       <input
                         type="text"
+                        placeholder="Field / Property Label"
                         value={field.label}
                         onChange={(e) => updateField(section.id, field.id, { label: e.target.value })}
-                        className="w-full text-xs font-semibold text-[#1F2A1C] bg-transparent border-b border-stone-300 focus:border-[#749B64] focus:outline-none p-1"
-                        placeholder="Field Label (e.g. Diet, Activity, Vocalization)"
+                        className="w-full font-bold text-sm text-[#1F2A1C] bg-transparent border-b border-stone-200 focus:border-[#749B64] focus:outline-none"
                       />
                     </div>
+                  </div>
 
-                    {/* Field Type */}
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Type selection */}
+                    <div className="flex items-center gap-1">
+                      <label className="text-stone-500 font-semibold">Type:</label>
                       <select
                         value={field.type}
                         onChange={(e) => updateField(section.id, field.id, { type: e.target.value as BlueprintFieldType })}
-                        className="bg-white border border-[#D5CBB9] rounded-lg px-2 py-1 text-xs font-medium"
+                        className="bg-[#F7F1E5] border border-[#D5CBB9] rounded-lg p-1.5 text-xs font-medium"
                       >
-                        <option value="text">Text (Single-line)</option>
-                        <option value="textarea">Textarea (Multi-line paragraph)</option>
+                        <option value="text">Text (Single Line)</option>
                         <option value="number">Number</option>
-                        <option value="multiselect">Multiselect (Tags / Preferences)</option>
-                        <option value="audio">Audio (Vocalizations / Clips)</option>
-                        <option value="image">Image (Illustration / Photo)</option>
-                        <option value="video">Video (YouTube / Embed)</option>
-                        <option value="map">Map (Distribution Cartography)</option>
+                        <option value="textarea">Text Area (Multi-line)</option>
+                        <option value="multiselect">Multi-select / Tags</option>
+                        <option value="image">Image Attachment / URL</option>
+                        <option value="audio">Audio Clip</option>
+                        <option value="video">Video Embed</option>
+                        <option value="map">Map / Coordinate Visual</option>
                       </select>
                     </div>
 
-                    {/* Field Weight */}
-                    <div className="flex items-center gap-1 text-xs text-stone-600">
-                      <span>Weight:</span>
+                    {/* Unit if number */}
+                    {field.type === "number" && (
+                      <div className="flex items-center gap-1">
+                        <label className="text-stone-500 font-semibold">Unit:</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. kg, nm, J"
+                          value={field.unit || ""}
+                          onChange={(e) => updateField(section.id, field.id, { unit: e.target.value })}
+                          className="w-20 bg-[#F7F1E5] border border-[#D5CBB9] rounded-lg p-1.5 text-xs"
+                        />
+                      </div>
+                    )}
+
+                    {/* Options if multiselect */}
+                    {field.type === "multiselect" && (
+                      <div className="flex items-center gap-1">
+                        <label className="text-stone-500 font-semibold">Options (comma-separated):</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Alpha, Beta, Gamma"
+                          value={field.options?.join(", ") || ""}
+                          onChange={(e) =>
+                            updateField(section.id, field.id, {
+                              options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                            })
+                          }
+                          className="w-48 bg-[#F7F1E5] border border-[#D5CBB9] rounded-lg p-1.5 text-xs"
+                        />
+                      </div>
+                    )}
+
+                    {/* Metric weight */}
+                    <div className="flex items-center gap-1">
+                      <label className="text-stone-500 font-semibold">Score Weight:</label>
                       <input
                         type="number"
                         min="0"
                         max="100"
                         value={field.weightPercent}
                         onChange={(e) => updateField(section.id, field.id, { weightPercent: Number(e.target.value) })}
-                        className="w-14 bg-white border border-[#D5CBB9] rounded-lg p-1 text-xs font-bold text-center"
+                        className="w-14 bg-[#F7F1E5] border border-[#D5CBB9] rounded-lg p-1.5 text-xs font-bold text-center"
                       />
-                      <span>%</span>
+                      <span className="text-stone-500 font-semibold">%</span>
                     </div>
 
                     {/* Required Checkbox */}
-                    <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-stone-700 font-semibold">
                       <input
                         type="checkbox"
                         checked={field.required}
                         onChange={(e) => updateField(section.id, field.id, { required: e.target.checked })}
-                        className="w-3.5 h-3.5 accent-[#749B64]"
+                        className="rounded text-[#749B64] focus:ring-[#749B64]"
                       />
-                      <span>Req</span>
+                      <span>Mandatory</span>
                     </label>
 
-                    {/* Delete Field */}
+                    {/* Remove Field */}
                     <button
                       onClick={() => removeField(section.id, field.id)}
                       className="text-stone-400 hover:text-red-700 transition p-1"
-                      title="Remove field"
+                      title="Remove Field"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
 
               <button
                 onClick={() => addField(section.id)}
-                className="text-xs font-bold text-[#4A6541] hover:text-[#344B2D] flex items-center gap-1 pt-2 transition"
+                className="w-full py-2.5 border-2 border-dashed border-[#D5CBB9] hover:border-[#749B64] rounded-2xl text-stone-600 hover:text-[#344B2D] font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white/50"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Field to this Section</span>
+                <Plus className="w-4 h-4" />
+                <span>Add Property Field to {section.title}</span>
               </button>
             </div>
           </div>

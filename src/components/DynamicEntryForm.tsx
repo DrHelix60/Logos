@@ -7,7 +7,7 @@ import { Award, Check, X, Sparkles } from "lucide-react";
 interface DynamicEntryFormProps {
   blueprint: Blueprint;
   databaseId: string;
-  communityId: string;
+  communityId?: string;
   currentUser: UserProfile;
   isOpen: boolean;
   onClose: () => void;
@@ -107,23 +107,23 @@ export const DynamicEntryForm: React.FC<DynamicEntryFormProps> = ({
           {/* Main Title & Subtitle */}
           <div className="bg-white p-4 rounded-2xl border border-stone-200 grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="font-bold block mb-1">Entry Title (e.g. Common Name / Thesis) *</label>
+              <label className="font-bold block mb-1">Primary Entry Title *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Entry Title..."
+                placeholder="Primary title or canonical identifier..."
                 className="w-full p-2.5 bg-[#F7F1E5] border border-stone-300 rounded-xl font-medium focus:ring-1 focus:ring-[#749B64]"
               />
             </div>
             <div>
-              <label className="font-bold block mb-1">Subtitle / Scientific Name</label>
+              <label className="font-bold block mb-1">Secondary Subtitle / Alternative Designation</label>
               <input
                 type="text"
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                placeholder="Subtitle or Scientific Classification..."
+                placeholder="Optional secondary designation or classification..."
                 className="w-full p-2.5 bg-[#F7F1E5] border border-stone-300 rounded-xl italic focus:ring-1 focus:ring-[#749B64]"
               />
             </div>

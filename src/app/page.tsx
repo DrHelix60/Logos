@@ -7,6 +7,7 @@ import { LogosPlatformHome } from "@/components/LogosPlatformHome";
 import { CommunityView } from "@/components/CommunityView";
 import { BlueprintStudio } from "@/components/BlueprintStudio";
 import { DatabaseEntriesView } from "@/components/DatabaseEntriesView";
+import { DatabaseExplorerMaker } from "@/components/DatabaseExplorerMaker";
 import { DynamicEntryView } from "@/components/DynamicEntryView";
 import { CreateCommunityModal } from "@/components/CreateCommunityModal";
 import { CreateDatabaseModal } from "@/components/CreateDatabaseModal";
@@ -31,12 +32,19 @@ import {
   Community,
   DatabaseModel,
   DynamicEntry,
+  ExplorerConfig,
   UserProfile,
 } from "@/types/database";
 import { initialProfiles } from "@/lib/seed-data";
 import { saveAs } from "file-saver";
 
-type ViewMode = "platform" | "community" | "database" | "entry" | "blueprint_studio";
+type ViewMode =
+  | "platform"
+  | "community"
+  | "database"
+  | "entry"
+  | "blueprint_studio"
+  | "explorer_maker";
 
 export default function Home() {
   const [isDbReady, setIsDbReady] = useState(false);
@@ -139,13 +147,19 @@ export default function Home() {
   const handleDatabaseSubmit = async (newDb: DatabaseModel) => {
     await insertDatabase(newDb);
     await loadData();
+    setSelectedDatabase(newDb);
+    setView("database");
   };
 
   // Blueprint publishing
   const handleSaveBlueprint = async (bp: Blueprint) => {
     await insertBlueprint(bp);
     await loadData();
-    setView("community");
+    if (selectedCommunity) {
+      setView("community");
+    } else {
+      setView("platform");
+    }
   };
 
   // Entry creation
@@ -154,6 +168,33 @@ export default function Home() {
     await loadData();
     setSelectedEntry(newEntry);
     setView("entry");
+  };
+
+  // Explorer configuration update
+  const handleSaveExplorerConfig = async (newConfig: ExplorerConfig) => {
+    if (!selectedDatabase) return;
+    const updatedDb: DatabaseModel = {
+      ...selectedDatabase,
+      explorerConfig: newConfig,
+    };
+    await insertDatabase(updatedDb);
+    await loadData();
+    setSelectedDatabase(updatedDb);
+    setView("database");
+  };
+
+  // Adopt independent database into community canon
+  const handleAdoptDatabase = async (dbId: string) => {
+    if (!selectedCommunity) return;
+    const currentCanon = selectedCommunity.canonDatabaseIds || [];
+    if (currentCanon.includes(dbId)) return;
+    const updatedComm: Community = {
+      ...selectedCommunity,
+      canonDatabaseIds: [...currentCanon, dbId],
+    };
+    await insertCommunity(updatedComm);
+    await loadData();
+    setSelectedCommunity(updatedComm);
   };
 
   // Database snapshot controls
@@ -197,21 +238,29 @@ export default function Home() {
     );
   }
 
-  // Active community scoped data
+  // Scoped data
   const communityDatabases = selectedCommunity
-    ? databases.filter((d) => d.communityId === selectedCommunity.id)
+    ? databases.filter(
+        (d) =>
+          d.communityId === selectedCommunity.id ||
+          (selectedCommunity.canonDatabaseIds || []).includes(d.id)
+      )
     : [];
+
   const communityBlueprints = selectedCommunity
-    ? blueprints.filter((b) => b.communityId === selectedCommunity.id)
-    : [];
+    ? blueprints.filter(
+        (b) => !b.communityId || b.communityId === selectedCommunity.id
+      )
+    : blueprints;
+
   const communityEntries = selectedCommunity
     ? entries.filter((e) => e.communityId === selectedCommunity.id)
     : [];
 
-  // Active database scoped data
   const databaseEntries = selectedDatabase
     ? entries.filter((e) => e.databaseId === selectedDatabase.id)
     : [];
+
   const activeBlueprint = selectedDatabase
     ? blueprints.find((b) => b.id === selectedDatabase.blueprintId) || null
     : null;
@@ -235,7 +284,7 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* VIEW 1: Platform Home (Outside Any Community) */}
+        {/* VIEW 1: Platform Home (Registry) */}
         {view === "platform" && (
           <LogosPlatformHome
             currentUser={currentProfile}
@@ -246,7 +295,19 @@ export default function Home() {
               setSelectedCommunity(comm);
               setView("community");
             }}
+            onSelectDatabase={(db) => {
+              setSelectedDatabase(db);
+              if (db.communityId) {
+                const comm = communities.find((c) => c.id === db.communityId) || null;
+                setSelectedCommunity(comm);
+              } else {
+                setSelectedCommunity(null);
+              }
+              setView("database");
+            }}
             onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+            onOpenCreateDatabase={() => setIsCreateDatabaseOpen(true)}
+            onOpenBlueprintStudio={() => setView("blueprint_studio")}
           />
         )}
 
@@ -255,6 +316,7 @@ export default function Home() {
           <CommunityView
             community={selectedCommunity}
             databases={communityDatabases}
+            allAvailableDatabases={databases}
             blueprints={communityBlueprints}
             entries={communityEntries}
             currentUser={currentProfile}
@@ -265,37 +327,56 @@ export default function Home() {
               setSelectedDatabase(db);
               setView("database");
             }}
+            onAdoptDatabase={handleAdoptDatabase}
           />
         )}
 
         {/* VIEW 3: Blueprint Studio */}
-        {view === "blueprint_studio" && selectedCommunity && (
+        {view === "blueprint_studio" && (
           <BlueprintStudio
-            communityId={selectedCommunity.id}
-            domain={selectedCommunity.discipline}
+            communityId={selectedCommunity?.id}
+            defaultDomain={selectedCommunity?.discipline || ""}
             onSave={handleSaveBlueprint}
-            onCancel={() => setView("community")}
+            onCancel={() => {
+              if (selectedCommunity) setView("community");
+              else setView("platform");
+            }}
           />
         )}
 
-        {/* VIEW 4: Database Entries List */}
-        {view === "database" && selectedCommunity && selectedDatabase && activeBlueprint && (
+        {/* VIEW 4: Database Entries Explorer */}
+        {view === "database" && selectedDatabase && activeBlueprint && (
           <DatabaseEntriesView
             community={selectedCommunity}
             database={selectedDatabase}
             blueprint={activeBlueprint}
             entries={databaseEntries}
             currentUser={currentProfile}
-            onBack={handleNavigateCommunity}
+            onBack={() => {
+              if (selectedCommunity) setView("community");
+              else setView("platform");
+            }}
             onOpenCreateEntry={() => setIsCreateEntryOpen(true)}
             onSelectEntry={(entry) => {
               setSelectedEntry(entry);
               setView("entry");
             }}
+            onOpenExplorerMaker={() => setView("explorer_maker")}
           />
         )}
 
-        {/* VIEW 5: Dynamic Entry Detail */}
+        {/* VIEW 5: Database Explorer Maker */}
+        {view === "explorer_maker" && selectedDatabase && activeBlueprint && (
+          <DatabaseExplorerMaker
+            blueprint={activeBlueprint}
+            initialConfig={selectedDatabase.explorerConfig}
+            databaseName={selectedDatabase.name}
+            onSave={handleSaveExplorerConfig}
+            onCancel={() => setView("database")}
+          />
+        )}
+
+        {/* VIEW 6: Dynamic Entry Detail */}
         {view === "entry" && selectedEntry && (
           <DynamicEntryView
             entry={selectedEntry}
@@ -307,6 +388,7 @@ export default function Home() {
                 version: "1.0",
                 domain: "",
                 sections: [],
+                creatorId: "usr-founder-rafael",
                 createdAt: "",
               }
             }
@@ -328,21 +410,21 @@ export default function Home() {
         />
       )}
 
-      {isCreateDatabaseOpen && selectedCommunity && (
+      {isCreateDatabaseOpen && (
         <CreateDatabaseModal
-          communityId={selectedCommunity.id}
-          blueprints={communityBlueprints}
+          communityId={selectedCommunity?.id}
+          blueprints={blueprints}
           isOpen={isCreateDatabaseOpen}
           onClose={() => setIsCreateDatabaseOpen(false)}
           onSubmit={handleDatabaseSubmit}
         />
       )}
 
-      {isCreateEntryOpen && selectedCommunity && selectedDatabase && activeBlueprint && (
+      {isCreateEntryOpen && selectedDatabase && activeBlueprint && (
         <DynamicEntryForm
           blueprint={activeBlueprint}
           databaseId={selectedDatabase.id}
-          communityId={selectedCommunity.id}
+          communityId={selectedCommunity?.id || ""}
           currentUser={currentProfile}
           isOpen={isCreateEntryOpen}
           onClose={() => setIsCreateEntryOpen(false)}

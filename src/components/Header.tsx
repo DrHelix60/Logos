@@ -5,7 +5,7 @@ import { Community, DatabaseModel, DynamicEntry, UserProfile, UserRole } from "@
 import { ShieldCheck, User, Eye, Database, Download, RefreshCw, Upload, ChevronRight, Home, Layers } from "lucide-react";
 
 interface HeaderProps {
-  currentView: "platform" | "community" | "database" | "entry" | "blueprint_studio";
+  currentView: "platform" | "community" | "database" | "entry" | "blueprint_studio" | "explorer_maker";
   selectedCommunity: Community | null;
   selectedDatabase: DatabaseModel | null;
   selectedEntry: DynamicEntry | null;
@@ -160,6 +160,15 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="bg-[#4A6541] font-bold text-white px-2.5 py-1 rounded-lg shadow-inner flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5 text-amber-300" />
                 Blueprint Studio
+              </span>
+            </>
+          )}
+
+          {currentView === "explorer_maker" && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              <span className="bg-[#4A6541] font-bold text-white px-2.5 py-1 rounded-lg shadow-inner flex items-center gap-1">
+                Explorer Maker
               </span>
             </>
           )}

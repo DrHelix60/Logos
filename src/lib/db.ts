@@ -2,7 +2,7 @@ import initSqlJs, { Database, SqlJsStatic } from "sql.js";
 import { Blueprint, Community, DatabaseModel, DynamicEntry, UserProfile, UserRole } from "@/types/database";
 import { initialProfiles } from "./seed-data";
 
-const STORAGE_KEY = "logos_sqlite_db_v2_empty";
+const STORAGE_KEY = "logos_sqlite_db_v3_modular";
 
 let SQLInstance: SqlJsStatic | null = null;
 let dbInstance: Database | null = null;
@@ -56,33 +56,37 @@ function initSchema(db: Database) {
       name TEXT NOT NULL,
       discipline TEXT NOT NULL,
       scope_principles TEXT NOT NULL,
+      canon_database_ids_json TEXT NOT NULL DEFAULT '[]',
       creator_id TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS databases (
       id TEXT PRIMARY KEY,
-      community_id TEXT NOT NULL,
+      community_id TEXT,
       name TEXT NOT NULL,
       scope_description TEXT NOT NULL,
       blueprint_id TEXT NOT NULL,
+      explorer_config_json TEXT,
+      creator_id TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS blueprints (
       id TEXT PRIMARY KEY,
-      community_id TEXT NOT NULL,
+      community_id TEXT,
       name TEXT NOT NULL,
       version TEXT NOT NULL,
       domain TEXT NOT NULL,
       sections_json TEXT NOT NULL,
+      creator_id TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS entries (
       id TEXT PRIMARY KEY,
       database_id TEXT NOT NULL,
-      community_id TEXT NOT NULL,
+      community_id TEXT,
       blueprint_id TEXT NOT NULL,
       title TEXT NOT NULL,
       subtitle TEXT,
@@ -153,92 +157,142 @@ export async function resetDatabaseToClean(): Promise<void> {
 // --- Communities ---
 export async function getAllCommunities(): Promise<Community[]> {
   const db = await initDatabase();
-  const res = db.exec("SELECT * FROM communities ORDER BY created_at DESC");
+  const res = db.exec("SELECT id, name, discipline, scope_principles, canon_database_ids_json, creator_id, created_at FROM communities ORDER BY created_at DESC");
   if (!res.length) return [];
   return res[0].values.map((row) => ({
     id: row[0] as string,
     name: row[1] as string,
     discipline: row[2] as string,
     scopePrinciples: row[3] as string,
-    creatorId: row[4] as string,
-    createdAt: row[5] as string,
+    canonDatabaseIds: row[4] ? JSON.parse(row[4] as string) : [],
+    creatorId: row[5] as string,
+    createdAt: row[6] as string,
   }));
 }
 
 export async function insertCommunity(comm: Community): Promise<void> {
   const db = await initDatabase();
   db.run(
-    `INSERT OR REPLACE INTO communities VALUES (?, ?, ?, ?, ?, ?)`,
-    [comm.id, comm.name, comm.discipline, comm.scopePrinciples, comm.creatorId, comm.createdAt]
+    `INSERT OR REPLACE INTO communities (id, name, discipline, scope_principles, canon_database_ids_json, creator_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      comm.id,
+      comm.name,
+      comm.discipline,
+      comm.scopePrinciples,
+      JSON.stringify(comm.canonDatabaseIds || []),
+      comm.creatorId,
+      comm.createdAt,
+    ]
   );
   saveDatabase(db);
 }
 
 // --- Databases ---
-export async function getDatabasesByCommunity(communityId: string): Promise<DatabaseModel[]> {
+export async function getAllDatabases(): Promise<DatabaseModel[]> {
   const db = await initDatabase();
-  const stmt = db.prepare("SELECT * FROM databases WHERE community_id = ? ORDER BY created_at DESC");
-  stmt.bind([communityId]);
-  const results: DatabaseModel[] = [];
-  while (stmt.step()) {
-    const row = stmt.getAsObject();
-    results.push({
-      id: row.id as string,
-      communityId: row.community_id as string,
-      name: row.name as string,
-      scopeDescription: row.scope_description as string,
-      blueprintId: row.blueprint_id as string,
-      createdAt: row.created_at as string,
-    });
-  }
-  stmt.free();
-  return results;
+  const res = db.exec("SELECT id, community_id, name, scope_description, blueprint_id, explorer_config_json, creator_id, created_at FROM databases ORDER BY created_at DESC");
+  if (!res.length) return [];
+  return res[0].values.map((row) => ({
+    id: row[0] as string,
+    communityId: (row[1] as string) || undefined,
+    name: row[2] as string,
+    scopeDescription: row[3] as string,
+    blueprintId: row[4] as string,
+    explorerConfig: row[5] ? JSON.parse(row[5] as string) : undefined,
+    creatorId: (row[6] as string) || "usr-founder-rafael",
+    createdAt: row[7] as string,
+  }));
+}
+
+export async function getDatabasesByCommunity(communityId: string, canonIds: string[] = []): Promise<DatabaseModel[]> {
+  const allDbs = await getAllDatabases();
+  return allDbs.filter((d) => d.communityId === communityId || canonIds.includes(d.id));
 }
 
 export async function insertDatabase(database: DatabaseModel): Promise<void> {
   const db = await initDatabase();
   db.run(
-    `INSERT OR REPLACE INTO databases VALUES (?, ?, ?, ?, ?, ?)`,
-    [database.id, database.communityId, database.name, database.scopeDescription, database.blueprintId, database.createdAt]
+    `INSERT OR REPLACE INTO databases (id, community_id, name, scope_description, blueprint_id, explorer_config_json, creator_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      database.id,
+      database.communityId || null,
+      database.name,
+      database.scopeDescription,
+      database.blueprintId,
+      database.explorerConfig ? JSON.stringify(database.explorerConfig) : null,
+      database.creatorId,
+      database.createdAt,
+    ]
   );
   saveDatabase(db);
 }
 
 // --- Blueprints ---
-export async function getBlueprintsByCommunity(communityId: string): Promise<Blueprint[]> {
+export async function getAllBlueprints(): Promise<Blueprint[]> {
   const db = await initDatabase();
-  const stmt = db.prepare("SELECT * FROM blueprints WHERE community_id = ? ORDER BY created_at DESC");
-  stmt.bind([communityId]);
-  const results: Blueprint[] = [];
-  while (stmt.step()) {
-    const row = stmt.getAsObject();
-    results.push({
-      id: row.id as string,
-      communityId: row.community_id as string,
-      name: row.name as string,
-      version: row.version as string,
-      domain: row.domain as string,
-      sections: JSON.parse(row.sections_json as string),
-      createdAt: row.created_at as string,
-    });
-  }
-  stmt.free();
-  return results;
+  const res = db.exec("SELECT id, community_id, name, version, domain, sections_json, creator_id, created_at FROM blueprints ORDER BY created_at DESC");
+  if (!res.length) return [];
+  return res[0].values.map((row) => ({
+    id: row[0] as string,
+    communityId: (row[1] as string) || undefined,
+    name: row[2] as string,
+    version: row[3] as string,
+    domain: row[4] as string,
+    sections: JSON.parse(row[5] as string),
+    creatorId: (row[6] as string) || "usr-founder-rafael",
+    createdAt: row[7] as string,
+  }));
+}
+
+export async function getBlueprintsByCommunity(communityId: string): Promise<Blueprint[]> {
+  const all = await getAllBlueprints();
+  // Return community blueprints as well as independent universal blueprints (communityId undefined or empty)
+  return all.filter((b) => !b.communityId || b.communityId === communityId);
 }
 
 export async function insertBlueprint(bp: Blueprint): Promise<void> {
   const db = await initDatabase();
   db.run(
-    `INSERT OR REPLACE INTO blueprints VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [bp.id, bp.communityId, bp.name, bp.version, bp.domain, JSON.stringify(bp.sections), bp.createdAt]
+    `INSERT OR REPLACE INTO blueprints (id, community_id, name, version, domain, sections_json, creator_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      bp.id,
+      bp.communityId || null,
+      bp.name,
+      bp.version,
+      bp.domain,
+      JSON.stringify(bp.sections),
+      bp.creatorId,
+      bp.createdAt,
+    ]
   );
   saveDatabase(db);
 }
 
 // --- Entries ---
+export async function getAllEntries(): Promise<DynamicEntry[]> {
+  const db = await initDatabase();
+  const res = db.exec("SELECT id, database_id, community_id, blueprint_id, title, subtitle, status, author_id, is_boosted, metric_score, data_json, created_at, updated_at FROM entries ORDER BY created_at DESC");
+  if (!res.length) return [];
+  return res[0].values.map((row) => ({
+    id: row[0] as string,
+    databaseId: row[1] as string,
+    communityId: (row[2] as string) || undefined,
+    blueprintId: row[3] as string,
+    title: row[4] as string,
+    subtitle: (row[5] as string) || undefined,
+    status: row[6] as "published" | "pending_review",
+    authorId: row[7] as string,
+    isBoosted: Boolean(row[8]),
+    metricScore: Number(row[9]),
+    data: JSON.parse(row[10] as string),
+    createdAt: row[11] as string,
+    updatedAt: row[12] as string,
+  }));
+}
+
 export async function getEntriesByDatabase(databaseId: string): Promise<DynamicEntry[]> {
   const db = await initDatabase();
-  const stmt = db.prepare("SELECT * FROM entries WHERE database_id = ? ORDER BY created_at DESC");
+  const stmt = db.prepare("SELECT id, database_id, community_id, blueprint_id, title, subtitle, status, author_id, is_boosted, metric_score, data_json, created_at, updated_at FROM entries WHERE database_id = ? ORDER BY created_at DESC");
   stmt.bind([databaseId]);
   const results: DynamicEntry[] = [];
   while (stmt.step()) {
@@ -246,7 +300,7 @@ export async function getEntriesByDatabase(databaseId: string): Promise<DynamicE
     results.push({
       id: row.id as string,
       databaseId: row.database_id as string,
-      communityId: row.community_id as string,
+      communityId: (row.community_id as string) || undefined,
       blueprintId: row.blueprint_id as string,
       title: row.title as string,
       subtitle: (row.subtitle as string) || undefined,
@@ -266,11 +320,11 @@ export async function getEntriesByDatabase(databaseId: string): Promise<DynamicE
 export async function insertEntry(entry: DynamicEntry): Promise<void> {
   const db = await initDatabase();
   db.run(
-    `INSERT OR REPLACE INTO entries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO entries (id, database_id, community_id, blueprint_id, title, subtitle, status, author_id, is_boosted, metric_score, data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.databaseId,
-      entry.communityId,
+      entry.communityId || null,
       entry.blueprintId,
       entry.title,
       entry.subtitle || "",
@@ -284,59 +338,6 @@ export async function insertEntry(entry: DynamicEntry): Promise<void> {
     ]
   );
   saveDatabase(db);
-}
-
-// --- All Databases ---
-export async function getAllDatabases(): Promise<DatabaseModel[]> {
-  const db = await initDatabase();
-  const res = db.exec("SELECT * FROM databases ORDER BY created_at DESC");
-  if (!res.length) return [];
-  return res[0].values.map((row) => ({
-    id: row[0] as string,
-    communityId: row[1] as string,
-    name: row[2] as string,
-    scopeDescription: row[3] as string,
-    blueprintId: row[4] as string,
-    createdAt: row[5] as string,
-  }));
-}
-
-// --- All Blueprints ---
-export async function getAllBlueprints(): Promise<Blueprint[]> {
-  const db = await initDatabase();
-  const res = db.exec("SELECT * FROM blueprints ORDER BY created_at DESC");
-  if (!res.length) return [];
-  return res[0].values.map((row) => ({
-    id: row[0] as string,
-    communityId: row[1] as string,
-    name: row[2] as string,
-    version: row[3] as string,
-    domain: row[4] as string,
-    sections: JSON.parse(row[5] as string),
-    createdAt: row[6] as string,
-  }));
-}
-
-// --- All Entries ---
-export async function getAllEntries(): Promise<DynamicEntry[]> {
-  const db = await initDatabase();
-  const res = db.exec("SELECT * FROM entries ORDER BY created_at DESC");
-  if (!res.length) return [];
-  return res[0].values.map((row) => ({
-    id: row[0] as string,
-    databaseId: row[1] as string,
-    communityId: row[2] as string,
-    blueprintId: row[3] as string,
-    title: row[4] as string,
-    subtitle: (row[5] as string) || undefined,
-    status: row[6] as "published" | "pending_review",
-    authorId: row[7] as string,
-    isBoosted: Boolean(row[8]),
-    metricScore: Number(row[9]),
-    data: JSON.parse(row[10] as string),
-    createdAt: row[11] as string,
-    updatedAt: row[12] as string,
-  }));
 }
 
 // --- Profiles ---

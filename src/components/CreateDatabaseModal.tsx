@@ -5,7 +5,7 @@ import { Blueprint, DatabaseModel } from "@/types/database";
 import { X, Check, Database } from "lucide-react";
 
 interface CreateDatabaseModalProps {
-  communityId: string;
+  communityId?: string;
   blueprints: Blueprint[];
   isOpen: boolean;
   onClose: () => void;
@@ -24,6 +24,7 @@ export const CreateDatabaseModal: React.FC<CreateDatabaseModalProps> = ({
   const [selectedBlueprintId, setSelectedBlueprintId] = useState(
     blueprints[0]?.id || ""
   );
+  const [isIndependent, setIsIndependent] = useState(!communityId);
 
   if (!isOpen) return null;
 
@@ -31,12 +32,38 @@ export const CreateDatabaseModal: React.FC<CreateDatabaseModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
+    const assignedBlueprint = blueprints.find((b) => b.id === selectedBlueprintId) || blueprints[0];
+    if (!assignedBlueprint) return;
+
+    // Default explorer configuration generated from blueprint
+    const allFields = assignedBlueprint.sections.flatMap((s) => s.fields);
+    const defaultSearchFields = ["title", "subtitle", ...allFields.filter((f) => f.type === "text").map((f) => f.id)];
+    const defaultFilterFields = allFields
+      .filter((f) => f.type === "multiselect" || f.type === "text" || f.type === "number")
+      .slice(0, 4)
+      .map((f) => ({
+        fieldId: f.id,
+        label: f.label,
+        filterType: f.type === "number" ? ("range" as const) : f.type === "multiselect" ? ("multiselect" as const) : ("select" as const),
+        logic: "or" as const,
+      }));
+    const defaultCardVisible = allFields.slice(0, 3).map((f) => f.id);
+
     const newDb: DatabaseModel = {
       id: `db-${Date.now()}`,
-      communityId,
+      communityId: isIndependent ? undefined : communityId,
       name: name.trim(),
-      scopeDescription: scopeDescription.trim() || "Canonical database scope.",
-      blueprintId: selectedBlueprintId || (blueprints[0]?.id ?? ""),
+      scopeDescription: scopeDescription.trim() || "Canonical database scope and classification criteria.",
+      blueprintId: assignedBlueprint.id,
+      explorerConfig: {
+        searchFields: defaultSearchFields,
+        filterFields: defaultFilterFields,
+        cardVisibleFields: defaultCardVisible,
+        defaultLayout: "grid",
+        defaultSortField: "metricScore",
+        defaultSortOrder: "desc",
+      },
+      creatorId: "usr-founder-rafael",
       createdAt: new Date().toISOString(),
     };
 
@@ -51,7 +78,7 @@ export const CreateDatabaseModal: React.FC<CreateDatabaseModalProps> = ({
           <div className="flex items-center gap-2">
             <Database className="w-5 h-5 text-[#4A6541]" />
             <h3 className="text-xl font-bold font-serif text-[#344B2D]">
-              Create Database
+              Create Knowledge Database
             </h3>
           </div>
           <button onClick={onClose} className="text-stone-500 hover:text-stone-900 p-1">
@@ -65,44 +92,58 @@ export const CreateDatabaseModal: React.FC<CreateDatabaseModalProps> = ({
             <input
               type="text"
               required
-              placeholder="e.g. European Mammals"
+              placeholder="e.g. Fundamental Physical Constants, Chemical Elements"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64]"
+              className="w-full text-xs p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64]"
             />
           </div>
 
           <div>
-            <label className="font-bold block mb-1 text-stone-700">Scope Description</label>
+            <label className="font-bold block mb-1 text-stone-700">Scope & Classification Criteria</label>
             <textarea
-              rows={2}
-              placeholder="e.g. Living Organisms > Animals > European Mammals"
+              rows={3}
+              placeholder="Classification boundaries, empirical criteria, and scope..."
               value={scopeDescription}
               onChange={(e) => setScopeDescription(e.target.value)}
-              className="w-full text-sm p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64]"
+              className="w-full text-xs p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64]"
             />
           </div>
 
           <div>
-            <label className="font-bold block mb-1 text-stone-700">Associated Blueprint *</label>
+            <label className="font-bold block mb-1 text-stone-700">Governing Blueprint Schema *</label>
             {blueprints.length > 0 ? (
               <select
                 value={selectedBlueprintId}
                 onChange={(e) => setSelectedBlueprintId(e.target.value)}
-                className="w-full text-sm p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64]"
+                className="w-full text-xs p-3 bg-white border border-[#D5CBB9] rounded-xl focus:ring-2 focus:ring-[#749B64] font-medium"
               >
                 {blueprints.map((bp) => (
                   <option key={bp.id} value={bp.id}>
-                    {bp.name} (v{bp.version})
+                    {bp.name} (v{bp.version}) — {bp.domain}
                   </option>
                 ))}
               </select>
             ) : (
-              <p className="text-red-700 font-semibold p-2 bg-red-50 rounded-lg">
-                No blueprints found in this community. Please design a blueprint first!
+              <p className="text-stone-700 font-semibold p-3 bg-stone-100 rounded-xl border border-stone-300">
+                No blueprints registered yet. Please design a blueprint specification first.
               </p>
             )}
           </div>
+
+          {communityId && (
+            <div className="pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-stone-700 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={isIndependent}
+                  onChange={(e) => setIsIndependent(e.target.checked)}
+                  className="rounded text-[#749B64] focus:ring-[#749B64]"
+                />
+                <span>Make independent (available across all schools of thought)</span>
+              </label>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D5CBB9]">
             <button

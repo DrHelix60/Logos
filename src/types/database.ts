@@ -16,16 +16,35 @@ export interface Community {
   name: string;
   discipline: string;
   scopePrinciples: string;
+  canonDatabaseIds?: string[];
   creatorId: string;
   createdAt: string;
 }
 
+export interface ExplorerFilterField {
+  fieldId: string;
+  label: string;
+  filterType: "multiselect" | "select" | "range" | "text";
+  logic: "and" | "or";
+}
+
+export interface ExplorerConfig {
+  searchFields: string[]; // ["title", "subtitle", ...]
+  filterFields: ExplorerFilterField[];
+  cardVisibleFields: string[]; // Blueprint field IDs to display on summary cards
+  defaultLayout: "grid" | "table" | "list";
+  defaultSortField?: string;
+  defaultSortOrder?: "asc" | "desc";
+}
+
 export interface DatabaseModel {
   id: string;
-  communityId: string;
+  communityId?: string; // Optional: If omitted, standalone/independent database
   name: string;
   scopeDescription: string;
   blueprintId: string;
+  explorerConfig?: ExplorerConfig;
+  creatorId: string;
   createdAt: string;
 }
 
@@ -59,18 +78,19 @@ export interface BlueprintSection {
 
 export interface Blueprint {
   id: string;
-  communityId: string;
+  communityId?: string; // Optional: If omitted, independent/universal blueprint
   name: string;
   version: string;
   domain: string;
   sections: BlueprintSection[];
+  creatorId: string;
   createdAt: string;
 }
 
 export interface DynamicEntry {
   id: string;
   databaseId: string;
-  communityId: string;
+  communityId?: string;
   blueprintId: string;
   title: string;
   subtitle?: string;

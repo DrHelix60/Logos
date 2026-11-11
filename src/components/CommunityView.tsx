@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import { Blueprint, Community, DatabaseModel, DynamicEntry, UserProfile } from "@/types/database";
-import { Database, Layers, PlusCircle, ArrowLeft, BookOpen, ChevronRight, Sparkles } from "lucide-react";
+import { Database, Layers, PlusCircle, ArrowLeft, ChevronRight, BookmarkPlus, Check, X } from "lucide-react";
 
 interface CommunityViewProps {
   community: Community;
   databases: DatabaseModel[];
+  allAvailableDatabases: DatabaseModel[];
   blueprints: Blueprint[];
   entries: DynamicEntry[];
   currentUser: UserProfile;
@@ -14,11 +15,13 @@ interface CommunityViewProps {
   onOpenCreateDatabase: () => void;
   onOpenBlueprintStudio: () => void;
   onSelectDatabase: (db: DatabaseModel) => void;
+  onAdoptDatabase: (dbId: string) => void;
 }
 
 export const CommunityView: React.FC<CommunityViewProps> = ({
   community,
   databases,
+  allAvailableDatabases,
   blueprints,
   entries,
   currentUser,
@@ -26,8 +29,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   onOpenCreateDatabase,
   onOpenBlueprintStudio,
   onSelectDatabase,
+  onAdoptDatabase,
 }) => {
   const [activeTab, setActiveTab] = useState<"databases" | "blueprints">("databases");
+  const [isAdoptModalOpen, setIsAdoptModalOpen] = useState(false);
+
+  // Available independent databases that are not already in this community's canon
+  const adoptableDatabases = allAvailableDatabases.filter(
+    (d) => !databases.some((cd) => cd.id === d.id)
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
@@ -35,7 +45,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       <div className="flex items-center justify-between border-b border-[#D5CBB9] pb-4">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-stone-700 hover:text-[#344B2D] font-medium text-sm transition bg-[#EBE3D0] hover:bg-[#DFD6C2] px-4 py-2 rounded-xl"
+          className="inline-flex items-center gap-2 text-stone-700 hover:text-[#344B2D] font-medium text-xs transition bg-[#EBE3D0] hover:bg-[#DFD6C2] px-4 py-2 rounded-xl"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Logos Network</span>
@@ -49,7 +59,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       </div>
 
       {/* Community Banner */}
-      <div className="bg-[#6F9560] text-white p-8 rounded-3xl shadow-figma border-2 border-[#5A7C4F] space-y-3">
+      <div className="bg-[#6F9560] text-white p-7 sm:p-8 rounded-3xl shadow-figma border-2 border-[#5A7C4F] space-y-3">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#DDECD8] bg-[#4A6541] px-3 py-1 rounded-full">
           School of Thought
         </span>
@@ -70,7 +80,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           }`}
         >
           <Database className="w-4 h-4" />
-          <span>Databases ({databases.length})</span>
+          <span>Canon Databases ({databases.length})</span>
         </button>
 
         <button
@@ -89,47 +99,62 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       {/* Tab 1: Databases / Canon */}
       {activeTab === "databases" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-bold font-serif text-[#344B2D]">
                 Databases in Canon
               </h3>
-              <p className="text-xs text-stone-600">The accepted modular datasets standardizing this school of thought</p>
+              <p className="text-xs text-stone-600">
+                The accepted datasets standardizing this school of thought
+              </p>
             </div>
 
-            {currentUser.role === "founder" || currentUser.role === "leader" ? (
+            <div className="flex items-center gap-2">
+              {adoptableDatabases.length > 0 && (
+                <button
+                  onClick={() => setIsAdoptModalOpen(true)}
+                  className="bg-white hover:bg-stone-50 text-[#344B2D] border border-[#D5CBB9] px-4 py-2 rounded-2xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5"
+                >
+                  <BookmarkPlus className="w-4 h-4 text-[#749B64]" />
+                  <span>Adopt Database ({adoptableDatabases.length})</span>
+                </button>
+              )}
+
               <button
                 onClick={onOpenCreateDatabase}
                 className="bg-[#749B64] hover:bg-[#5E8450] text-white px-5 py-2 rounded-2xl text-xs font-bold shadow-md transition flex items-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Create Database</span>
+                <span>+ Create Database</span>
               </button>
-            ) : null}
+            </div>
           </div>
 
           {databases.length === 0 ? (
             <div className="bg-[#EFE8D8] border-2 border-dashed border-[#D5CBB9] rounded-3xl p-12 text-center space-y-4">
               <Database className="w-12 h-12 text-[#749B64] mx-auto opacity-60" />
-              <h4 className="text-base font-bold font-serif text-[#344B2D]">No databases created in this canon yet</h4>
+              <h4 className="text-base font-bold font-serif text-[#344B2D]">
+                No databases currently in this canon
+              </h4>
               <p className="text-xs text-stone-600 max-w-md mx-auto">
-                First, design a Blueprint in the Blueprint Studio, then create a database linked to that blueprint.
+                Create a new database governed by a blueprint, or adopt existing independent databases into this school.
               </p>
-              {blueprints.length > 0 ? (
+              <div className="flex flex-wrap justify-center gap-3 pt-2">
                 <button
                   onClick={onOpenCreateDatabase}
                   className="bg-[#4A6541] text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow hover:bg-[#344B2D] transition"
                 >
-                  Create Your First Database
+                  Create Database
                 </button>
-              ) : (
-                <button
-                  onClick={onOpenBlueprintStudio}
-                  className="bg-[#749B64] text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow hover:bg-[#5E8450] transition"
-                >
-                  Design First Blueprint
-                </button>
-              )}
+                {adoptableDatabases.length > 0 && (
+                  <button
+                    onClick={() => setIsAdoptModalOpen(true)}
+                    className="bg-white border border-[#D5CBB9] text-[#344B2D] px-6 py-2.5 rounded-xl text-xs font-bold shadow-2xs hover:bg-stone-50 transition"
+                  >
+                    Adopt Existing Database
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -153,7 +178,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     </div>
 
                     <div className="pt-6 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-                      <span>{dbEntries.length} Entries</span>
+                      <span>{dbEntries.length} Records</span>
                       <span className="text-[#4A6541] font-bold flex items-center gap-1 group-hover:translate-x-1 transition">
                         Open <ChevronRight className="w-3.5 h-3.5" />
                       </span>
@@ -166,15 +191,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         </div>
       )}
 
-      {/* Tab 2: Blueprints Studio List */}
+      {/* Tab 2: Blueprints */}
       {activeTab === "blueprints" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold font-serif text-[#344B2D]">
-                Registered Blueprints
+                Blueprints in Scope
               </h3>
-              <p className="text-xs text-stone-600">The structural schemas defining data tiers, field types, and scoring</p>
+              <p className="text-xs text-stone-600">
+                Schemas defining structured tiers, attribute types, and quantitative scoring
+              </p>
             </div>
 
             <button
@@ -189,9 +216,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           {blueprints.length === 0 ? (
             <div className="bg-[#EFE8D8] border-2 border-dashed border-[#D5CBB9] rounded-3xl p-12 text-center space-y-4">
               <Layers className="w-12 h-12 text-[#749B64] mx-auto opacity-60" />
-              <h4 className="text-base font-bold font-serif text-[#344B2D]">No blueprints designed yet</h4>
+              <h4 className="text-base font-bold font-serif text-[#344B2D]">No blueprints registered</h4>
               <p className="text-xs text-stone-600 max-w-md mx-auto">
-                Use the Blueprint Studio to craft the exact sections, field types, and 0–100% metric weights you designed.
+                Use the Blueprint Studio to craft the exact sections, property types, and 0–100% metric weights for this domain.
               </p>
               <button
                 onClick={onOpenBlueprintStudio}
@@ -221,7 +248,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     <ul className="list-disc pl-4 space-y-1">
                       {bp.sections.map((s) => (
                         <li key={s.id}>
-                          <strong>{s.title}</strong> — {s.tierWeightPercent}% ({s.fields.length} fields)
+                          <strong>{s.title}</strong> — {s.tierWeightPercent}% ({s.fields.length} attributes)
                         </li>
                       ))}
                     </ul>
@@ -230,6 +257,63 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Adopt Database Modal */}
+      {isAdoptModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#F7F1E5] text-[#1F2A1C] w-full max-w-lg rounded-3xl shadow-2xl border-2 border-[#749B64] p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#D5CBB9] pb-3">
+              <h3 className="text-lg font-bold font-serif text-[#344B2D] flex items-center gap-2">
+                <BookmarkPlus className="w-5 h-5 text-[#4A6541]" />
+                <span>Adopt Database into Canon</span>
+              </h3>
+              <button
+                onClick={() => setIsAdoptModalOpen(false)}
+                className="text-stone-500 hover:text-stone-900 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600">
+              Select an independent or external database to adopt into <strong>{community.name}</strong>&apos;s canon:
+            </p>
+
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+              {adoptableDatabases.map((db) => (
+                <div
+                  key={db.id}
+                  className="bg-white p-3.5 rounded-2xl border border-[#D5CBB9] flex items-center justify-between gap-3 text-xs"
+                >
+                  <div>
+                    <h4 className="font-bold text-[#344B2D]">{db.name}</h4>
+                    <p className="text-[11px] text-stone-500 line-clamp-1">{db.scopeDescription}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      onAdoptDatabase(db.id);
+                      setIsAdoptModalOpen(false);
+                    }}
+                    className="bg-[#749B64] hover:bg-[#5E8450] text-white px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1 shrink-0"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Adopt</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-[#D5CBB9] flex justify-end">
+              <button
+                onClick={() => setIsAdoptModalOpen(false)}
+                className="px-4 py-2 text-stone-600 hover:text-stone-900 text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
